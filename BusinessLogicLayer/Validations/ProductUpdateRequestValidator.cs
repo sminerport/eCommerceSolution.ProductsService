@@ -15,9 +15,7 @@ public class ProductUpdateRequestValidator : AbstractValidator<ProductUpdateRequ
             .WithMessage("Product ID is required.");
         RuleFor(productUpdateRequest => productUpdateRequest.ProductName)
             .NotEmpty()
-            .WithMessage("Product name is required.")
-            .Length(2, 50)
-            .WithMessage("Product name must be between 2 and 50 characters.");
+            .WithMessage("Product name is required.");
         RuleFor(productUpdateRequest => productUpdateRequest.Category)
             .IsInEnum()
             .WithMessage("Invalid category.");

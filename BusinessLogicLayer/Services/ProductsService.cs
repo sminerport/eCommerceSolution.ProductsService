@@ -66,24 +66,19 @@ public class ProductsService : IProductsService
 
     public async Task<ProductResponse?> UpdateProduct(ProductUpdateRequest productUpdateRequest)
     {
-        if (productUpdateRequest == null)
+        Product? existingProduct = await _productsRepository.GetProductByCondition(temp => temp.ProductID == productUpdateRequest.ProductID);
+
+        if (existingProduct == null)
         {
             throw new ArgumentNullException(nameof(productUpdateRequest));
         }
 
-        ValidationResult validationResult = _productUpdateRequestValidator.Validate(productUpdateRequest);
+        ValidationResult validationResult = await _productUpdateRequestValidator.ValidateAsync(productUpdateRequest);
 
         if (!validationResult.IsValid)
         {
             string? errors = string.Join(", ", validationResult.Errors.Select(temp => temp.ErrorMessage));
             throw new ArgumentException($"Validation failed: {errors}");
-        }
-
-        Product? existingProduct = await _productsRepository.GetProductByCondition(temp => temp.ProductID == productUpdateRequest.ProductID);
-
-        if (existingProduct == null)
-        {
-            throw new ArgumentException($"Product with ID {productUpdateRequest.ProductID} not found.");
         }
 
         Product productToUpdate = _mapper.Map<Product>(productUpdateRequest);
