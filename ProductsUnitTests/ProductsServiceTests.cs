@@ -268,6 +268,11 @@ public class ProductsServiceTests
 
         // Act
         Func<Task> act = async () => await _productsService.UpdateProduct(productUpdateRequest);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("Validation failed: Product name is required, Unit price must be greater than zero");
+        _productsRepositoryMock.Verify(repo => repo.AddProduct(It.IsAny<Product>()), Times.Never);
     }
 
     [Fact]
