@@ -63,14 +63,15 @@ stages:
         solution: '**/*.sln'
         msbuildArchitecture: 'x64'
         platform: 'Any CPU'
-        configuration: 'Release'
-        msbuildArguments: '/p:Configuration=Release'
+        configuration: 'Debug'
     - task: VSTest@3
       displayName: Test solution
       inputs:
         testSelector: 'testAssemblies'
         testAssemblyVer2: |
           **\ProductsUnitTests.dll
+          !**\*TestAdapter.dll
+          !**\obj\**
         searchFolder: '$(System.DefaultWorkingDirectory)'
         runTestsInIsolation: true
         codeCoverageEnabled: true
