@@ -65,14 +65,12 @@ stages:
         platform: 'Any CPU'
         configuration: 'Release'
         msbuildArguments: '/p:Configuration=Release'
-        restoreNugetPackages: true
     - task: VSTest@3
       displayName: Test solution
       inputs:
         testSelector: 'testAssemblies'
         testAssemblyVer2: |
-          **\bin\**\*ProductsUnitTests.dll
-          **\bin\**\*tests.dll
+          **\ProductsUnitTests.dll
         searchFolder: '$(System.DefaultWorkingDirectory)'
         runTestsInIsolation: true
         codeCoverageEnabled: true
