@@ -92,8 +92,8 @@ stages:
   condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'ref/heads/dev'))
   jobs:
   - deployment: DeploymentToDev
-  - displayName: Deployment to Dev Environment
-  - environment: dev
+    displayName: Deployment to Dev Environment
+    environment: dev
     strategy:
       runOnce:
         deploy:
