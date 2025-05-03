@@ -36,3 +36,4 @@ stages:
         containerRegistry: $(dockerRegistryServiceConnection)
         tags: |
           $(tag)
+        buildContext: $(Build.SourcesDirectory)
