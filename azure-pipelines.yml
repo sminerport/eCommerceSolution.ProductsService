@@ -17,6 +17,8 @@ variables:
     value: '$(Build.BuildId)'
   - name: vmImageName
     value: 'ubuntu-latest'
+  - name: windowsImageName
+    value: 'windows-latest'
 
 stages:
 - stage: Build
@@ -37,3 +39,40 @@ stages:
         tags: |
           $(tag)
         buildContext: $(Build.SourcesDirectory)
+
+- stage: Test
+  displayName: Test and publish results stage
+  jobs:
+  - job: RunTest
+    displayName: Run Unit Tests
+    pool:
+      vmImage: $(windowsImageName)
+    steps:
+    - checkout: self
+      displayName: Checkout source code
+    - task: NuGetToolInstaller@1
+      displayName: Install NuGetTool
+    - task: NuGetCommand@2
+      displayName: Restore NuGet Packages
+      inputs:
+        command: 'restore'
+        restoreSolution: '**/*.sln'
+    - task: MSBuild@1
+      displayName: Build solution
+      inputs:
+        solution: '**/*.sln'
+        msbuildArchitecture: 'x64'
+        platform: 'Any CPU'
+        configuration: 'Release'
+        msbuildArguments: '/p:Configuration=Release'
+        restoreNugetPackages: true
+    - task: VSTest@3
+      displayName: Test solution
+      inputs:
+        testSelector: 'testAssemblies'
+        testAssemblyVer2: |
+          **\bin\**\*ProductsUnitTests.dll
+          **\bin\**\*tests.dll
+        searchFolder: '$(System.DefaultWorkingDirectory)'
+        runTestsInIsolation: true
+        codeCoverageEnabled: true
