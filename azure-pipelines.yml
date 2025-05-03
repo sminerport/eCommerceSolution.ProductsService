@@ -26,7 +26,7 @@ variables:
   - name: aksServiceConnectionName
     value: 'dev-ecommerce-aks-cluster-dev-1746262345787'
   - name: deploymentFile
-    value: '${Build.SourcesDirectory}/k8s/deployment.yaml'
+    value: '$(Build.SourcesDirectory)/k8s/deployment.yaml'
   - name: kubernetesNamespace
     value: 'dev'
 
@@ -105,3 +105,16 @@ stages:
                echo "Listing contents of k8s"
                ls -l $(Build.SourcesDirectory)/k8s/
             displayName: 'List Files in k8s Directory'
+
+          - script: |
+               sed -i 's/__TAG__/$(tag)/g' $(deploymentFile)
+            displayName: 'Replace image tag in deployment file'
+
+          - task: Kubernetes@1
+            displayName: Deploy to dev namespace in kubernetes
+            inputs:
+              kubernetesServiceEndpoint: $(aksServiceConnectionName)
+              kubernetesCluster: $(aksClusterName)
+              namespace: $(kubernetesNamespace)
+              command: apply
+              arguments: '-f ${Build.SourcesDirectory}/k8s/.'
