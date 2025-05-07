@@ -109,7 +109,7 @@ stages:
   - stage: DeployToDev
     displayName: Deploy to Dev
     dependsOn: Test
-    condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'ref/heads/dev'))
+    condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
     jobs:
       - deployment: DeploymentToDev
         displayName: Deployment to Dev Environment
