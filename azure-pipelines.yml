@@ -25,8 +25,6 @@ variables:
     value: "ubuntu-latest"
   - name: windowsImageName
     value: "windows-latest"
-  - name: imageRepository
-    value: products-microservice
   - name: aksClusterName
     value: "ecommerce-aks-cluster"
   - name: devAksServiceConnectionName
@@ -170,7 +168,7 @@ stages:
                     kubernetesCluster: $(aksClusterName)
                     namespace: $(qaKubernetesNamespace)
                     command: apply
-                    arguments: "f $(Build.SourcesDirectory)/k8s/qa/."
+                    arguments: "-f $(Build.SourcesDirectory)/k8s/qa/."
 
   - stage: DeployToUat
     displayName: Deploy to Uat
@@ -203,7 +201,7 @@ stages:
                     kubernetesCluster: $(aksClusterName)
                     namespace: $(uatKubernetesNamespace)
                     command: apply
-                    arguments: "f $(Build.SourcesDirectory)/k8s/uat/."
+                    arguments: "-f $(Build.SourcesDirectory)/k8s/uat/."
 
   - stage: DeployToStaging
     displayName: Deploy to Staging
@@ -236,7 +234,7 @@ stages:
                     kubernetesCluster: $(aksClusterName)
                     namespace: $(stagingKubernetesNamespace)
                     command: apply
-                    arguments: "f $(Build.SourcesDirectory)/k8s/staging/."
+                    arguments: "-f $(Build.SourcesDirectory)/k8s/staging/."
 
   - stage: DeployToProd
     displayName: Deploy to Production
@@ -269,4 +267,4 @@ stages:
                     kubernetesCluster: $(aksClusterName)
                     namespace: $(prodKubernetesNamespace)
                     command: apply
-                    arguments: "f $(Build.SourcesDirectory)/k8s/prod/."
+                    arguments: "-f $(Build.SourcesDirectory)/k8s/prod/."
