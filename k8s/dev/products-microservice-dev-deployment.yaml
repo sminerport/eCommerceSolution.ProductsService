@@ -18,7 +18,7 @@ spec:
         - name: products-microservice
           image: microecommerceregistry.azurecr.io/products-microservice:__TAG__
           ports:
-            - containerPort: 8080
+            - containerPort: 7070
           env:
             - name: ASPNETCORE_ENVIRONMENT
               value: Development
