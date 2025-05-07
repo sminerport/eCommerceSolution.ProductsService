@@ -9,13 +9,13 @@ spec:
   selector:
     matchLabels:
       app: apigateway
-    template:
-      metadata:
-        labels:
-          app: apigateway
-      spec:
-        containers:
-          - name: apigateway
-            image: microecommerceregistry.azurecr.io/apigateway:latest
-            ports:
-              - containerPort: 8080
+  template:
+    metadata:
+      labels:
+        app: apigateway
+    spec:
+      containers:
+        - name: apigateway
+          image: microecommerceregistry.azurecr.io/apigateway:latest
+          ports:
+            - containerPort: 8080

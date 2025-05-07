@@ -19,6 +19,5 @@ spec:
         - name: rabbitmq
           image: rabbitmq:4.1.0-management
           ports:
-          - containerPort: 5672
-          - containerPort: 15672
-
+            - containerPort: 5672
+            - containerPort: 15672
