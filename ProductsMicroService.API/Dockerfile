@@ -21,11 +21,13 @@ RUN dotnet build "./ProductsMicroService.API.csproj" -c $BUILD_CONFIGURATION -o 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./ProductsMicroService.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN ls -l /app/publish
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+RUN ls -l /app
 ENV MYSQL_HOST=localhost
 ENV MYSQL_DB=ecommerceproductsdatabase
 ENV MYSQL_USER=root
