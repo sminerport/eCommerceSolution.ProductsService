@@ -133,7 +133,7 @@ stages:
                 - task: Kubernetes@1
                   displayName: Deploy to dev namespace in kubernetes
                   inputs:
-                    kubernetesServiceEndpoint: $(aksDevServiceConnectionName)
+                    kubernetesServiceEndpoint: $(devAksServiceConnectionName)
                     kubernetesCluster: $(aksClusterName)
                     namespace: $(devKubernetesNamespace)
                     command: apply
@@ -166,7 +166,7 @@ stages:
                 - task: Kubernetes@1
                   displayName: Deploy to qa namespace in kubernetes
                   inputs:
-                    kubernetesServiceEndpoint: $(aksQaServiceConnectionName)
+                    kubernetesServiceEndpoint: $(qaAksServiceConnectionName)
                     kubernetesCluster: $(aksClusterName)
                     namespace: $(qaKubernetesNamespace)
                     command: apply
@@ -199,7 +199,7 @@ stages:
                 - task: Kubernetes@1
                   displayName: Deploy to uat namespace in kubernetes
                   inputs:
-                    kubernetesServiceEndpoint: $(aksUatServiceConnectionName)
+                    kubernetesServiceEndpoint: $(uatAksServiceConnectionName)
                     kubernetesCluster: $(aksClusterName)
                     namespace: $(uatKubernetesNamespace)
                     command: apply
@@ -232,7 +232,7 @@ stages:
                 - task: Kubernetes@1
                   displayName: Deploy to staging namespace in kubernetes
                   inputs:
-                    kubernetesServiceEndpoint: $(aksStagingServiceConnectionName)
+                    kubernetesServiceEndpoint: $(stagingAksServiceConnectionName)
                     kubernetesCluster: $(aksClusterName)
                     namespace: $(stagingKubernetesNamespace)
                     command: apply
@@ -265,7 +265,7 @@ stages:
                 - task: Kubernetes@1
                   displayName: Deploy to production namespace in kubernetes
                   inputs:
-                    kubernetesServiceEndpoint: $(aksProdServiceConnectionName)
+                    kubernetesServiceEndpoint: $(prodAksServiceConnectionName)
                     kubernetesCluster: $(aksClusterName)
                     namespace: $(prodKubernetesNamespace)
                     command: apply
