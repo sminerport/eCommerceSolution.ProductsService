@@ -8,265 +8,265 @@ trigger:
       - prod
 
 resources:
-- repo: self
+  - repo: self
 
 variables:
   - name: dockerRegistryServiceConnection
-    value: '5aec3b45-85d9-420d-83b3-09b2c833e2dd'
+    value: "5aec3b45-85d9-420d-83b3-09b2c833e2dd"
   - name: imageRepository
-    value: 'products-microservice'
+    value: "products-microservice"
   - name: containerRegistry
-    value: 'microecommerceregistry.azurecr.io'
+    value: "microecommerceregistry.azurecr.io"
   - name: dockerfilePath
-    value: '$(Build.SourcesDirectory)/ProductsMicroService.API/Dockerfile'
+    value: "$(Build.SourcesDirectory)/ProductsMicroService.API/Dockerfile"
   - name: tag
-    value: '$(Build.BuildId)'
+    value: "$(Build.BuildId)"
   - name: linuxImageName
-    value: 'ubuntu-latest'
+    value: "ubuntu-latest"
   - name: windowsImageName
-    value: 'windows-latest'
+    value: "windows-latest"
   - name: imageRepository
     value: products-microservice
   - name: aksClusterName
-    value: 'ecommerce-aks-cluster'
+    value: "ecommerce-aks-cluster"
   - name: devAksServiceConnectionName
-    value: 'dev-ecommerce-aks-cluster-dev-1746262345787'
+    value: "dev-ecommerce-aks-cluster-dev-1746262345787"
   - name: qaAksServiceConnectionName
-    value: 'qa-ecommerce-aks-cluster-qa-1746262481292'
+    value: "qa-ecommerce-aks-cluster-qa-1746262481292"
   - name: uatAksServiceConnectionName
-    value: 'uat-ecommerce-aks-cluster-uat-1746262574281'
+    value: "uat-ecommerce-aks-cluster-uat-1746262574281"
   - name: stagingAksServiceConnectionName
-    value: 'staging-ecommerce-aks-cluster-staging-1746262651313'
+    value: "staging-ecommerce-aks-cluster-staging-1746262651313"
   - name: prodAksServiceConnectionName
-    value: 'prod-ecommerce-aks-cluster-prod-1746262712232'
+    value: "prod-ecommerce-aks-cluster-prod-1746262712232"
   - name: devKubernetesNamespace
-    value: 'dev'
+    value: "dev"
   - name: qaKubernetesNamespace
-    value: 'qa'
+    value: "qa"
   - name: uatKubernetesNamespace
-    value: 'uat'
+    value: "uat"
   - name: stagingKubernetesNamespace
-    value: 'staging'
+    value: "staging"
   - name: prodKubernetesNamespace
-    value: 'prod'
+    value: "prod"
 
 stages:
-- stage: Build
-  displayName: Build and push stage
-  jobs:
-  - job: Build
-    displayName: Docker Build
-    pool:
-      vmImage: $(linuxImageName)
-    steps:
-    - task: Docker@2
-      displayName: Build and push an image to container registry
-      inputs:
-        command: buildAndPush
-        repository: $(imageRepository)
-        dockerfile: $(dockerfilePath)
-        containerRegistry: $(dockerRegistryServiceConnection)
-        tags: |
-          $(tag)
-        buildContext: $(Build.SourcesDirectory)
+  - stage: Build
+    displayName: Build and push stage
+    jobs:
+      - job: Build
+        displayName: Docker Build
+        pool:
+          vmImage: $(linuxImageName)
+        steps:
+          - task: Docker@2
+            displayName: Build and push an image to container registry
+            inputs:
+              command: buildAndPush
+              repository: $(imageRepository)
+              dockerfile: $(dockerfilePath)
+              containerRegistry: $(dockerRegistryServiceConnection)
+              tags: |
+                $(tag)
+              buildContext: $(Build.SourcesDirectory)
 
-- stage: Test
-  displayName: Test and publish results stage
-  jobs:
-  - job: RunTest
-    displayName: Run Unit Tests
-    pool:
-      vmImage: $(windowsImageName)
-    steps:
-    - checkout: self
-      displayName: Checkout source code
-    - task: NuGetToolInstaller@1
-      displayName: Install NuGetTool
-    - task: NuGetCommand@2
-      displayName: Restore NuGet Packages
-      inputs:
-        command: 'restore'
-        restoreSolution: '**/*.sln'
-    - task: MSBuild@1
-      displayName: Build solution
-      inputs:
-        solution: '**/*.sln'
-        msbuildArchitecture: 'x64'
-        platform: 'Any CPU'
-        configuration: 'Debug'
-    - task: VSTest@3
-      displayName: Test solution
-      inputs:
-        testSelector: 'testAssemblies'
-        testAssemblyVer2: |
-          **\ProductsUnitTests.dll
-          !**\*TestAdapter.dll
-          !**\obj\**
-        searchFolder: '$(System.DefaultWorkingDirectory)'
-        runTestsInIsolation: true
-        codeCoverageEnabled: true
-
-- stage: DeployToDev
-  displayName: Deploy to Dev
-  dependsOn: Test
-  condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'ref/heads/dev'))
-  jobs:
-  - deployment: DeploymentToDev
-    displayName: Deployment to Dev Environment
-    environment: dev
-    strategy:
-      runOnce:
-        deploy:
-          steps:
+  - stage: Test
+    displayName: Test and publish results stage
+    jobs:
+      - job: RunTest
+        displayName: Run Unit Tests
+        pool:
+          vmImage: $(windowsImageName)
+        steps:
           - checkout: self
             displayName: Checkout source code
-
-          - script: |
-               echo "Listing contents of k8s"
-               ls -l $(Build.SourcesDirectory)/k8s/dev
-            displayName: 'List Files in k8s/dev Directory'
-
-          - script: |
-               find $(Build.SourcesDirectory)/k8s/dev -type f \( -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/__TAG__/$(tag)/g' {} +
-            displayName: 'Replace image tag in all deployment file'
-
-          - task: Kubernetes@1
-            displayName: Deploy to dev namespace in kubernetes
+          - task: NuGetToolInstaller@1
+            displayName: Install NuGetTool
+          - task: NuGetCommand@2
+            displayName: Restore NuGet Packages
             inputs:
-              kubernetesServiceEndpoint: $(aksDevServiceConnectionName)
-              kubernetesCluster: $(aksClusterName)
-              namespace: $(devKubernetesNamespace)
-              command: apply
-              arguments: '-f $(Build.SourcesDirectory)/k8s/dev/.'
-
-- stage: DeployToQa
-  displayName: Deploy to QA
-  dependsOn: Test
-  condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/qa'))
-  jobs:
-  - deployment: DeploymentToQa
-    displayName: Deployment to QA Environment
-    environment: qa
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
-            displayName: Checkout source code
-
-          - script: |
-               echo "Listing contents of k8s"
-               ls -l $(Build.SourcesDirectory)/k8s/
-            displayName: 'List Files in k8s Directory'
-
-          - script: |
-               sed -i 's/__TAG__/$(tag)/g' $(qaDeploymentFile)
-            displayName: 'Replace image tag in QA deployment file'
-
-          - task: Kubernetes@1
-            displayName: Deploy to qa namespace in kubernetes
+              command: "restore"
+              restoreSolution: "**/*.sln"
+          - task: MSBuild@1
+            displayName: Build solution
             inputs:
-              kubernetsServiceEndpoint: $(aksQaServiceConnectionName)
-              kubernetesCluster: $(aksClusterName)
-              namespace: $(kubernetesQaNamespace)
-              command: apply
-              arguments: 'f $(Build.SourcesDirectory)/k8s/.'
-
-- stage: DeployToUat
-  displayName: Deploy to Uat
-  dependsOn: Test
-  condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/uat'))
-  jobs:
-  - deployment: DeploymentToUat
-    displayName: Deployment to UAT Environment
-    environment: uat
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
-            displayName: Checkout source code
-
-            - script: |
-                 echo "Listing contents of k8s"
-                 ls -l $(Build.SourcesDirectory)/k8s/
-              displayName: 'List Files in k8s Directory'
-
-            - script: |
-                 sed -i 's/__TAG__/$(tag)/g' $(uatDeploymentFile)
-              displayName: 'Replace image tag in UAT deployment file'
-
-          - task: Kubernetes@1
-            displayName: Deploy to uat namespace in kubernetes
+              solution: "**/*.sln"
+              msbuildArchitecture: "x64"
+              platform: "Any CPU"
+              configuration: "Debug"
+          - task: VSTest@3
+            displayName: Test solution
             inputs:
-              kubernetsServiceEndpoint: $(aksUatServiceConnectionName)
-              kubernetesCluster: $(aksClusterName)
-              namespace: $(kubernetesUatNamespace)
-              command: apply
-              arguments: 'f $(Build.SourcesDirectory)/k8s/.'
+              testSelector: "testAssemblies"
+              testAssemblyVer2: |
+                **\ProductsUnitTests.dll
+                !**\*TestAdapter.dll
+                !**\obj\**
+              searchFolder: "$(System.DefaultWorkingDirectory)"
+              runTestsInIsolation: true
+              codeCoverageEnabled: true
 
-- stage: DeployToStaging
-  displayName: Deploy to Staging
-  dependsOn: Test
-  condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/staging'))
-  jobs:
-  - deployment: DeploymentToStaging
-    displayName: Deployment to Staging Environment
-    environment: staging
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
-            displayName: Checkout source code
+  - stage: DeployToDev
+    displayName: Deploy to Dev
+    dependsOn: Test
+    condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'ref/heads/dev'))
+    jobs:
+      - deployment: DeploymentToDev
+        displayName: Deployment to Dev Environment
+        environment: dev
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: Checkout source code
 
-            - script: |
-                 echo "Listing contents of k8s"
-                 ls -l $(Build.SourcesDirectory)/k8s/
-              displayName: 'List Files in k8s Directory'
+                - script: |
+                    echo "Listing contents of k8s"
+                    ls -l $(Build.SourcesDirectory)/k8s/dev
+                  displayName: "List Files in k8s/dev Directory"
 
-            - script: |
-                 sed -i 's/__TAG__/$(tag)/g' $(stagingDeploymentFile)
-              displayName: 'Replace image tag in staging deployment file'
+                - script: |
+                    find $(Build.SourcesDirectory)/k8s/dev -type f \( -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/__TAG__/$(tag)/g' {} +
+                  displayName: "Replace image tag in all deployment file"
 
-          - task: Kubernetes@1
-            displayName: Deploy to staging namespace in kubernetes
-            inputs:
-              kubernetsServiceEndpoint: $(aksStagingServiceConnectionName)
-              kubernetesCluster: $(aksClusterName)
-              namespace: $(kubernetesStagingNamespace)
-              command: apply
-              arguments: 'f $(Build.SourcesDirectory)/k8s/.'
+                - task: Kubernetes@1
+                  displayName: Deploy to dev namespace in kubernetes
+                  inputs:
+                    kubernetesServiceEndpoint: $(aksDevServiceConnectionName)
+                    kubernetesCluster: $(aksClusterName)
+                    namespace: $(devKubernetesNamespace)
+                    command: apply
+                    arguments: "-f $(Build.SourcesDirectory)/k8s/dev/."
 
-- stage: DeployToProd
-  displayName: Deploy to Production
-  dependsOn: Test
-  condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/prod'))
-  jobs:
-  - deployment: DeploymentToProduction
-    displayName: Deployment to Production Environment
-    environment: prod
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
-            displayName: Checkout source code
+  - stage: DeployToQa
+    displayName: Deploy to QA
+    dependsOn: Test
+    condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/qa'))
+    jobs:
+      - deployment: DeploymentToQa
+        displayName: Deployment to QA Environment
+        environment: qa
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: Checkout source code
 
-            - script: |
-                 echo "Listing contents of k8s"
-                 ls -l $(Build.SourcesDirectory)/k8s/
-              displayName: 'List Files in k8s Directory'
+                - script: |
+                    echo "Listing contents of k8s"
+                    ls -l $(Build.SourcesDirectory)/k8s/qa
+                  displayName: "List Files in k8s QA Directory"
 
-            - script: |
-                 sed -i 's/__TAG__/$(tag)/g' $(prodDeploymentFile)
-              displayName: 'Replace image tag in prod deployment file'
+                - script: |
+                    find $(Build.SourcesDirectory)/k8s/qa -type f \( -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/__TAG__/$(tag)/g' {} +
+                  displayName: "Replace image tag in QA deployment file"
 
-          - task: Kubernetes@1
-            displayName: Deploy to production namespace in kubernetes
-            inputs:
-              kubernetsServiceEndpoint: $(aksProdServiceConnectionName)
-              kubernetesCluster: $(aksClusterName)
-              namespace: $(kubernetesProdNamespace)
-              command: apply
-              arguments: 'f $(Build.SourcesDirectory)/k8s/.'
+                - task: Kubernetes@1
+                  displayName: Deploy to qa namespace in kubernetes
+                  inputs:
+                    kubernetesServiceEndpoint: $(aksQaServiceConnectionName)
+                    kubernetesCluster: $(aksClusterName)
+                    namespace: $(qaKubernetesNamespace)
+                    command: apply
+                    arguments: "f $(Build.SourcesDirectory)/k8s/qa/."
+
+  - stage: DeployToUat
+    displayName: Deploy to Uat
+    dependsOn: Test
+    condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/uat'))
+    jobs:
+      - deployment: DeploymentToUat
+        displayName: Deployment to UAT Environment
+        environment: uat
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: Checkout source code
+
+                - script: |
+                    echo "Listing contents of k8s"
+                    ls -l $(Build.SourcesDirectory)/k8s/uat
+                  displayName: "List Files in k8s Directory"
+
+                - script: |
+                    find $(Build.SourcesDirectory)/k8s/uat -type f \( -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/__TAG__/$(tag)/g' {} +
+                  displayName: "Replace image tag in UAT deployment file"
+
+                - task: Kubernetes@1
+                  displayName: Deploy to uat namespace in kubernetes
+                  inputs:
+                    kubernetesServiceEndpoint: $(aksUatServiceConnectionName)
+                    kubernetesCluster: $(aksClusterName)
+                    namespace: $(uatKubernetesNamespace)
+                    command: apply
+                    arguments: "f $(Build.SourcesDirectory)/k8s/uat/."
+
+  - stage: DeployToStaging
+    displayName: Deploy to Staging
+    dependsOn: Test
+    condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/staging'))
+    jobs:
+      - deployment: DeploymentToStaging
+        displayName: Deployment to Staging Environment
+        environment: staging
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: Checkout source code
+
+                - script: |
+                    echo "Listing contents of k8s"
+                    ls -l $(Build.SourcesDirectory)/k8s/staging
+                  displayName: "List Files in k8s Staging Directory"
+
+                - script: |
+                    find $(Build.SourcesDirectory)/k8s/staging -type f \( -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/__TAG__/$(tag)/g' {} +
+                  displayName: "Replace image tag in staging deployment file"
+
+                - task: Kubernetes@1
+                  displayName: Deploy to staging namespace in kubernetes
+                  inputs:
+                    kubernetesServiceEndpoint: $(aksStagingServiceConnectionName)
+                    kubernetesCluster: $(aksClusterName)
+                    namespace: $(stagingKubernetesNamespace)
+                    command: apply
+                    arguments: "f $(Build.SourcesDirectory)/k8s/staging/."
+
+  - stage: DeployToProd
+    displayName: Deploy to Production
+    dependsOn: Test
+    condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/prod'))
+    jobs:
+      - deployment: DeploymentToProduction
+        displayName: Deployment to Production Environment
+        environment: prod
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: Checkout source code
+
+                - script: |
+                    echo "Listing contents of k8s"
+                    ls -l $(Build.SourcesDirectory)/k8s/prod
+                  displayName: "List Files in k8s Directory"
+
+                - script: |
+                    find $(Build.SourcesDirectory)/k8s/prod -type f \( -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/__TAG__/$(tag)/g' {} +
+                  displayName: "Replace image tag in prod deployment file"
+
+                - task: Kubernetes@1
+                  displayName: Deploy to production namespace in kubernetes
+                  inputs:
+                    kubernetesServiceEndpoint: $(aksProdServiceConnectionName)
+                    kubernetesCluster: $(aksClusterName)
+                    namespace: $(prodKubernetesNamespace)
+                    command: apply
+                    arguments: "f $(Build.SourcesDirectory)/k8s/prod/."
