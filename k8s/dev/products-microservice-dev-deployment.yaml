@@ -17,6 +17,7 @@ spec:
       containers:
         - name: products-microservice
           image: microecommerceregistry.azurecr.io/products-microservice:__TAG__
+          imagePullPolicy: Always
           ports:
             - containerPort: 7070
           env:
