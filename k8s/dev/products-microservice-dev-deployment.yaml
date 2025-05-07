@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: products-microservice-deployment
+  namespace: dev
   labels:
     app: products-microservice
 spec:
@@ -33,6 +34,13 @@ spec:
               value: root
             - name: MYSQL_PASSWORD
               value: admin
+            - name: ConnectionStrings__DefaultConnection
+              value: >-
+                Server=mysql;
+                Port=3306;
+                Database=ecommerceproductsdatabase;
+                UserId=root;
+                Password=admin;
             - name: RABBITMQ_HOST
               value: rabbitmq
             - name: RABBITMQ_USERNAME
