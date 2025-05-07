@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rabbitmq-deployment
-  namespace: ecommerce-namespace
+  namespace: dev
   labels:
     app: rabbitmq
 spec:
