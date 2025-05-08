@@ -135,6 +135,7 @@ stages:
                       --from-literal=DbAdminUser=$(DbAdminUser) \
                       --from-literal=DbAdminPassword=$(DbAdminPassword) \
                       --from-literal=ConnectionStrings__DefaultConnection="$(DefaultConnection)" \
+                      --from-literal=connectionString="$(DefaultConnection)" \
                       --from-literal=RabbitMqUsername=$(RabbitMqUsername) \
                       --from-literal=RabbitMqPassword=$(RabbitMqPassword) \
                       --dry-run=client -o yaml \
