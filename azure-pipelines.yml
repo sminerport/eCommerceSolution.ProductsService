@@ -37,6 +37,8 @@ variables:
     value: "staging-ecommerce-aks-cluster-staging-1746262651313"
   - name: prodAksServiceConnectionName
     value: "prod-ecommerce-aks-cluster-prod-1746262712232"
+  - name: azureRMServiceConnection
+    value: "ecommerce-resource-group-connection"
 
 stages:
   - stage: Build
@@ -117,7 +119,7 @@ stages:
               - task: AzureCLI@2
                 displayName: Create/update mysql-credentials Secret
                 inputs:
-                  azureSubscription: $(dev-aks-service-connection)
+                  azureSubscription: $(azureRMServiceConnection)
                   scriptType: bash
                   scriptLocation: inlineScript
                   inlineScript: |
