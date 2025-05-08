@@ -115,7 +115,7 @@ stages:
               - task: Kubernetes@1
                 displayName: Create/update mysql-credentials Secret
                 inputs:
-                  kubernetesServiceEndpoint: $(kubernetes-service-connection-name)
+                  kubernetesServiceEndpoint: $(kubernetes-service-connection)
                   command: createSecretGeneric
                   secretName: mysql-credentials
                   secretType: generic
@@ -138,7 +138,7 @@ stages:
               - task: Kubernetes@1
                 displayName: Apply k8s/dev Manifests
                 inputs:
-                  kubernetesServiceEndpoint: $(kubernetes-service-connection-name)
+                  kubernetesServiceEndpoint: $(kubernetes-service-connection)
                   namespace: $(kubernetes-namespace)
                   command: apply
                   arguments: -f $(Build.SourcesDirectory)/k8s/dev
