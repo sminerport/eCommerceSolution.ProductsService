@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: products-microservice-deployment
@@ -24,25 +24,30 @@ spec:
           env:
             - name: ASPNETCORE_ENVIRONMENT
               value: Development
-            - name: MYSQL_HOST
-              value: mysql
-            - name: MYSQL_PORT
-              value: "3306"
-            - name: MYSQL_DB
-              value: ecommerceproductsdatabase
-            - name: MYSQL_USER
-              value: root
-            - name: MYSQL_PASSWORD
-              value: admin
+
+            # ───────────────────────────────────────────────────────────
+            # Database connection comes entirely from a Secret
+            # ───────────────────────────────────────────────────────────
             - name: ConnectionStrings__DefaultConnection
-              value: "Server=$(MYSQL_HOST);Port=$(MYSQL_PORT);Database=$(MYSQL_DB);UserId=$(MYSQL_USER);Password=$(MYSQL_PASSWORD);"
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credentials
+                  key: ConnectionStrings__DefaultConnection
+
+            # ───────────────────────────────────────────────────────────
+            # RabbitMQ credentials also from a Secret
+            # ───────────────────────────────────────────────────────────
             - name: RABBITMQ_HOST
               value: rabbitmq
-            - name: RABBITMQ_USERNAME
-              value: guest
-            - name: RABBITMQ_PASSWORD
-              value: guest
             - name: RABBITMQ_PORT
               value: "5672"
-            - name: RABBITMQ_PRODUCTS_EXCHANGE
-              value: products.exchange
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RabbitMqUsername
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RabbitMqPassword

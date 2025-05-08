@@ -19,7 +19,8 @@ spec:
         - name: mysql
           image: microecommerceregistry.azurecr.io/ecommerce-mysql:latest
           env:
-            - name: MYSQL_ROOT_PASSWORD
-              value: admin
-          ports:
-            - containerPort: 3306
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credentials
+                  key: connectionString
