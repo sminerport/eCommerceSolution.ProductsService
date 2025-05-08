@@ -119,6 +119,7 @@ stages:
                 inputs:
                   kubernetesServiceEndpoint: $(dev-aks-service-connection)
                   command: createSecretGeneric
+                  namespace: $(kubernetes-namespace)
                   secretName: mysql-credentials
                   secretType: generic
                   arguments: |
