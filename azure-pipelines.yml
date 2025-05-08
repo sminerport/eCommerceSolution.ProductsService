@@ -115,27 +115,31 @@ stages:
 
               - checkout: self
 
-              # ─── 1) Create or update the mysql-credentials k8s Secret ───
               - task: AzureCLI@2
-                displayName: Create/update mysql-credentials Secret
+                displayName: Create/update mysql & rabbitmq k8s Secrets
                 inputs:
-                  azureSubscription: $(azureRMServiceConnection)
+                  azureSubscription: $(azureRMServiceConnection)    # must be an AzureRM SP connection
                   scriptType: bash
                   scriptLocation: inlineScript
                   inlineScript: |
-                    # 1. Get AKS credentials into kubectl context
+                    # 1) Authenticate kubectl against your AKS cluster
                     az aks get-credentials \
                       --resource-group ecommerce-resource-group \
                       --name $(aksClusterName) \
                       --overwrite-existing
 
-                    # 2. Create-or-update the secret in one go
+                    # 2) Create-or-update the mysql-credentials Secret
                     kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
                       --from-literal=DbName=$(DbName) \
                       --from-literal=DbAdminUser=$(DbAdminUser) \
                       --from-literal=DbAdminPassword=$(DbAdminPassword) \
                       --from-literal=ConnectionStrings__DefaultConnection="$(DefaultConnection)" \
                       --from-literal=connectionString="$(DefaultConnection)" \
+                      --dry-run=client -o yaml \
+                    | kubectl -n $(kubernetes-namespace) apply -f -
+
+                    # 3) Create-or-update the rabbitmq-credentials Secret
+                    kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
                       --from-literal=RabbitMqUsername=$(RabbitMqUsername) \
                       --from-literal=RabbitMqPassword=$(RabbitMqPassword) \
                       --dry-run=client -o yaml \
