@@ -122,7 +122,7 @@ stages:
                   namespace: $(kubernetes-namespace)
                   secretName: mysql-credentials
                   secretType: generic
-                  arguments: |
+                  secretArguments: |
                     --from-literal=DbName=$(DbName)
                     --from-literal=DbAdminUser=$(DbAdminUser)
                     --from-literal=DbAdminPassword=$(DbAdminPassword)
