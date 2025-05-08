@@ -27,6 +27,8 @@ variables:
     value: "windows-latest"
   - name: aksClusterName
     value: "ecommerce-aks-cluster"
+  - name: dev-aks-service-connection
+    value: "dev-ecommerce-aks-cluster-dev-1746262345787"
   - name: qaAksServiceConnectionName
     value: "qa-ecommerce-aks-cluster-qa-1746262481292"
   - name: uatAksServiceConnectionName
@@ -115,7 +117,7 @@ stages:
               - task: Kubernetes@1
                 displayName: Create/update mysql-credentials Secret
                 inputs:
-                  kubernetesServiceEndpoint: $(kubernetes-service-connection)
+                  kubernetesServiceEndpoint: $(dev-aks-service-connection)
                   command: createSecretGeneric
                   secretName: mysql-credentials
                   secretType: generic
@@ -138,7 +140,7 @@ stages:
               - task: Kubernetes@1
                 displayName: Apply k8s/dev Manifests
                 inputs:
-                  kubernetesServiceEndpoint: $(kubernetes-service-connection)
+                  kubernetesServiceEndpoint: $(dev-aks-service-connection)
                   namespace: $(kubernetes-namespace)
                   command: apply
                   arguments: -f $(Build.SourcesDirectory)/k8s/dev
