@@ -92,56 +92,56 @@ stages:
               runTestsInIsolation: true
               codeCoverageEnabled: true
 
-- stage: DeployToDev
-  displayName: Deploy to Dev
-  dependsOn: Test
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
-  variables:
-    - group: products-microservice-dev
-    - group: products-secrets-dev
+  - stage: DeployToDev
+    displayName: Deploy to Dev
+    dependsOn: Test
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
+    variables:
+      - group: products-microservice-dev
+      - group: products-secrets-dev
 
-  jobs:
-  - deployment: DeploymentToDev
-    displayName: Deploy to Dev Environment
-    environment: dev
-    strategy:
-      runOnce:
-        deploy:
-          steps:
+    jobs:
+    - deployment: DeploymentToDev
+      displayName: Deploy to Dev Environment
+      environment: dev
+      strategy:
+        runOnce:
+          deploy:
+            steps:
 
-            - checkout: self
+              - checkout: self
 
-            # ─── 1) Create or update the mysql-credentials k8s Secret ───
-            - task: Kubernetes@1
-              displayName: Create/update mysql-credentials Secret
-              inputs:
-                kubernetesServiceEndpoint: $(kubernetes-service-connection-name)
-                command: createSecretGeneric
-                secretName: mysql-credentials
-                secretType: generic
-                arguments: |
-                  --from-literal=DbName=$(DbName)
-                  --from-literal=DbAdminUser=$(DbAdminUser)
-                  --from-literal=DbAdminPassword=$(DbAdminPassword)
-                  --from-literal=ConnectionStrings__DefaultConnection="$(DefaultConnection)"
-                  --from-literal=RabbitMqUsername=$(RabbitMqUsername)
-                  --from-literal=RabbitMqPassword=$(RabbitMqPassword)
+              # ─── 1) Create or update the mysql-credentials k8s Secret ───
+              - task: Kubernetes@1
+                displayName: Create/update mysql-credentials Secret
+                inputs:
+                  kubernetesServiceEndpoint: $(kubernetes-service-connection-name)
+                  command: createSecretGeneric
+                  secretName: mysql-credentials
+                  secretType: generic
+                  arguments: |
+                    --from-literal=DbName=$(DbName)
+                    --from-literal=DbAdminUser=$(DbAdminUser)
+                    --from-literal=DbAdminPassword=$(DbAdminPassword)
+                    --from-literal=ConnectionStrings__DefaultConnection="$(DefaultConnection)"
+                    --from-literal=RabbitMqUsername=$(RabbitMqUsername)
+                    --from-literal=RabbitMqPassword=$(RabbitMqPassword)
 
-            # ─── 2) Patch your image tags ─────────────────────────────
-            - script: |
-                find $(Build.SourcesDirectory)/k8s/dev \
-                  -type f \( -name "*.yaml" -o -name "*.yml" \) \
-                  -exec sed -i 's/__TAG__/$(tag)/g' {} +
-              displayName: Replace __TAG__ in Manifests
+              # ─── 2) Patch your image tags ─────────────────────────────
+              - script: |
+                  find $(Build.SourcesDirectory)/k8s/dev \
+                    -type f \( -name "*.yaml" -o -name "*.yml" \) \
+                    -exec sed -i 's/__TAG__/$(tag)/g' {} +
+                displayName: Replace __TAG__ in Manifests
 
-            # ─── 3) Apply all the dev manifests ──────────────────────
-            - task: Kubernetes@1
-              displayName: Apply k8s/dev Manifests
-              inputs:
-                kubernetesServiceEndpoint: $(kubernetes-service-connection-name)
-                namespace: $(kubernetes-namespace)
-                command: apply
-                arguments: -f $(Build.SourcesDirectory)/k8s/dev
+              # ─── 3) Apply all the dev manifests ──────────────────────
+              - task: Kubernetes@1
+                displayName: Apply k8s/dev Manifests
+                inputs:
+                  kubernetesServiceEndpoint: $(kubernetes-service-connection-name)
+                  namespace: $(kubernetes-namespace)
+                  command: apply
+                  arguments: -f $(Build.SourcesDirectory)/k8s/dev
 
   - stage: DeployToQa
     displayName: Deploy to QA
