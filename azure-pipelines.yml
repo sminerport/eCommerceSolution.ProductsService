@@ -138,7 +138,7 @@ stages:
             - task: Kubernetes@1
               displayName: Apply k8s/dev Manifests
               inputs:
-                kubernetesServiceEndpoint: $(devAksServiceConnectionName)
+                kubernetesServiceEndpoint: $(kubernetes-service-connection-name)
                 namespace: $(kubernetes-namespace)
                 command: apply
                 arguments: -f $(Build.SourcesDirectory)/k8s/dev
