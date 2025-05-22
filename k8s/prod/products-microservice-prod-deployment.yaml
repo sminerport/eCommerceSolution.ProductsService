@@ -1,0 +1,53 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: products-microservice-deployment
+  namespace: dev
+  labels:
+    app: products-microservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: products-microservice
+  template:
+    metadata:
+      labels:
+        app: products-microservice
+    spec:
+      containers:
+        - name: products-microservice
+          image: microecommerceregistry.azurecr.io/products-microservice:__TAG__
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7070
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+
+            # ───────────────────────────────────────────────────────────
+            # Database connection comes entirely from a Secret
+            # ───────────────────────────────────────────────────────────
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credentials
+                  key: ConnectionStrings__DefaultConnection
+
+            # ───────────────────────────────────────────────────────────
+            # RabbitMQ credentials also from a Secret
+            # ───────────────────────────────────────────────────────────
+            - name: RABBITMQ_HOST
+              value: rabbitmq
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RabbitMqUsername
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RabbitMqPassword

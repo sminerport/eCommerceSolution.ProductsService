@@ -29,13 +29,13 @@ variables:
     value: "ecommerce-aks-cluster"
   - name: dev-aks-service-connection
     value: "dev-ecommerce-aks-cluster-dev-1746262345787"
-  - name: qaAksServiceConnectionName
+  - name: qa-aks-service-connection
     value: "qa-ecommerce-aks-cluster-qa-1746262481292"
-  - name: uatAksServiceConnectionName
+  - name: uat-aks-service-connection
     value: "uat-ecommerce-aks-cluster-uat-1746262574281"
-  - name: stagingAksServiceConnectionName
+  - name: staging-aks-service-connection
     value: "staging-ecommerce-aks-cluster-staging-1746262651313"
-  - name: prodAksServiceConnectionName
+  - name: prod-aks-service-connection
     value: "prod-ecommerce-aks-cluster-prod-1746262712232"
   - name: azureRMServiceConnection
     value: "ecommerce-resource-group-connection"
@@ -105,198 +105,313 @@ stages:
       - group: products-secrets-dev
 
     jobs:
-    - deployment: DeploymentToDev
-      displayName: Deploy to Dev Environment
-      environment: dev
-      strategy:
-        runOnce:
-          deploy:
-            steps:
+      - deployment: DeploymentToDev
+        displayName: Deploy to Dev Environment
+        environment: dev
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
 
-              - checkout: self
+                - task: AzureCLI@2
+                  displayName: Create/update mysql & rabbitmq k8s Secrets
+                  inputs:
+                    azureSubscription: $(azureRMServiceConnection) # must be an AzureRM SP connection
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      # 1) Authenticate kubectl against your AKS cluster
+                      az aks get-credentials \
+                        --resource-group ecommerce-resource-group \
+                        --name $(aksClusterName) \
+                        --overwrite-existing
 
-              - task: AzureCLI@2
-                displayName: Create/update mysql & rabbitmq k8s Secrets
-                inputs:
-                  azureSubscription: $(azureRMServiceConnection)    # must be an AzureRM SP connection
-                  scriptType: bash
-                  scriptLocation: inlineScript
-                  inlineScript: |
-                    # 1) Authenticate kubectl against your AKS cluster
-                    az aks get-credentials \
-                      --resource-group ecommerce-resource-group \
-                      --name $(aksClusterName) \
-                      --overwrite-existing
+                      # 2) Create-or-update the mysql-credentials Secret
+                      kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
+                        --from-literal=DbName=$(DbName) \
+                        --from-literal=DbAdminUser=$(DbAdminUser) \
+                        --from-literal=DbAdminPassword=$(DbAdminPassword) \
+                        --from-literal=ConnectionStrings__DefaultConnection="$(DefaultConnection)" \
+                        --from-literal=connectionString="$(DefaultConnection)" \
+                        --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
 
-                    # 2) Create-or-update the mysql-credentials Secret
-                    kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
-                      --from-literal=DbName=$(DbName) \
-                      --from-literal=DbAdminUser=$(DbAdminUser) \
-                      --from-literal=DbAdminPassword=$(DbAdminPassword) \
-                      --from-literal=ConnectionStrings__DefaultConnection="$(DefaultConnection)" \
-                      --from-literal=connectionString="$(DefaultConnection)" \
-                      --dry-run=client -o yaml \
-                    | kubectl -n $(kubernetes-namespace) apply -f -
+                      # 3) Create-or-update the rabbitmq-credentials Secret
+                      kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
+                        --from-literal=RabbitMqUsername=$(RabbitMqUsername) \
+                        --from-literal=RabbitMqPassword=$(RabbitMqPassword) \
+                        --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
 
-                    # 3) Create-or-update the rabbitmq-credentials Secret
-                    kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
-                      --from-literal=RabbitMqUsername=$(RabbitMqUsername) \
-                      --from-literal=RabbitMqPassword=$(RabbitMqPassword) \
-                      --dry-run=client -o yaml \
-                    | kubectl -n $(kubernetes-namespace) apply -f -
+                # ─── 2) Patch your image tags ─────────────────────────────
+                - script: |
+                    find $(Build.SourcesDirectory)/k8s/dev \
+                      -type f \( -name "*.yaml" -o -name "*.yml" \) \
+                      -exec sed -i 's/__TAG__/$(tag)/g' {} +
+                  displayName: Replace __TAG__ in Manifests
 
-              # ─── 2) Patch your image tags ─────────────────────────────
-              - script: |
-                  find $(Build.SourcesDirectory)/k8s/dev \
-                    -type f \( -name "*.yaml" -o -name "*.yml" \) \
-                    -exec sed -i 's/__TAG__/$(tag)/g' {} +
-                displayName: Replace __TAG__ in Manifests
+                # ─── 3) Apply all the dev manifests ──────────────────────
+                - task: Kubernetes@1
+                  displayName: Apply k8s/dev Manifests
+                  inputs:
+                    kubernetesServiceEndpoint: $(dev-aks-service-connection)
+                    namespace: $(kubernetes-namespace)
+                    command: apply
+                    arguments: -f $(Build.SourcesDirectory)/k8s/dev
 
-              # ─── 3) Apply all the dev manifests ──────────────────────
-              - task: Kubernetes@1
-                displayName: Apply k8s/dev Manifests
-                inputs:
-                  kubernetesServiceEndpoint: $(dev-aks-service-connection)
-                  namespace: $(kubernetes-namespace)
-                  command: apply
-                  arguments: -f $(Build.SourcesDirectory)/k8s/dev
-
-  - stage: DeployToQa
+  - stage: DeployToQA
     displayName: Deploy to QA
     dependsOn: Test
-    condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/qa'))
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/qa'))
     variables:
-    - group: products-microservice-qa
+      - group: products-microservice-qa
+      - group: products-secrets-qa
+
     jobs:
-      - deployment: DeploymentToQa
-        displayName: Deployment to QA Environment
+      - deployment: DeploymentToQA
+        displayName: Deploy to QA Environment
         environment: qa
         strategy:
           runOnce:
             deploy:
               steps:
                 - checkout: self
-                  displayName: Checkout source code
 
-                - script: |
-                    echo "Listing contents of k8s"
-                    ls -l $(Build.SourcesDirectory)/k8s/qa
-                  displayName: "List Files in k8s QA Directory"
-
-                - script: |
-                    find $(Build.SourcesDirectory)/k8s/qa -type f \( -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/__TAG__/$(tag)/g' {} +
-                  displayName: "Replace image tag in QA deployment file"
-
-                - task: Kubernetes@1
-                  displayName: Deploy to qa namespace in kubernetes
+                - task: AzureCLI@2
+                  displayName: Create/update mysql & rabbitmq k8s Secrets
                   inputs:
-                    kubernetesServiceEndpoint: $(qaAksServiceConnectionName)
-                    kubernetesCluster: $(aksClusterName)
+                    azureSubscription: $(azureRMServiceConnection) # must be an AzureRM SP connection
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      # 1) Authenticate kubectl against your AKS cluster
+                      az aks get-credentials \
+                        --resource-group ecommerce-resource-group \
+                        --name $(aksClusterName) \
+                        --overwrite-existing
+
+                      # 2) Create-or-update the mysql-credentials Secret
+                      kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
+                        --from-literal=DbName=$(DbName) \
+                        --from-literal=DbAdminUser=$(DbAdminUser) \
+                        --from-literal=DbAdminPassword=$(DbAdminPassword) \
+                        --from-literal=ConnectionStrings__DefaultConnection="$(DefaultConnection)" \
+                        --from-literal=connectionString="$(DefaultConnection)" \
+                        --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
+
+                      # 3) Create-or-update the rabbitmq-credentials Secret
+                      kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
+                        --from-literal=RabbitMqUsername=$(RabbitMqUsername) \
+                        --from-literal=RabbitMqPassword=$(RabbitMqPassword) \
+                        --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
+
+                # ─── 2) Patch your image tags ─────────────────────────────
+                - script: |
+                    find $(Build.SourcesDirectory)/k8s/qa \
+                      -type f \( -name "*.yaml" -o -name "*.yml" \) \
+                      -exec sed -i 's/__TAG__/$(tag)/g' {} +
+                  displayName: Replace __TAG__ in Manifests
+
+                # ─── 3) Apply all the dev manifests ──────────────────────
+                - task: Kubernetes@1
+                  displayName: Apply k8s/qa Manifests
+                  inputs:
+                    kubernetesServiceEndpoint: $(qa-aks-service-connection)
                     namespace: $(kubernetes-namespace)
                     command: apply
-                    arguments: "-f $(Build.SourcesDirectory)/k8s/qa/."
+                    arguments: -f $(Build.SourcesDirectory)/k8s/qa
 
-  - stage: DeployToUat
-    displayName: Deploy to Uat
+  - stage: DeployToUAT
+    displayName: Deploy to UAT
     dependsOn: Test
-    condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/uat'))
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/uat'))
     variables:
-    - group: products-microservice-uat
+      - group: products-microservice-uat
+      - group: products-secrets-uat
+
     jobs:
-      - deployment: DeploymentToUat
-        displayName: Deployment to UAT Environment
+      - deployment: DeploymentToUAT
+        displayName: Deploy to UAT Environment
         environment: uat
         strategy:
           runOnce:
             deploy:
               steps:
                 - checkout: self
-                  displayName: Checkout source code
 
-                - script: |
-                    echo "Listing contents of k8s"
-                    ls -l $(Build.SourcesDirectory)/k8s/uat
-                  displayName: "List Files in k8s Directory"
-
-                - script: |
-                    find $(Build.SourcesDirectory)/k8s/uat -type f \( -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/__TAG__/$(tag)/g' {} +
-                  displayName: "Replace image tag in UAT deployment file"
-
-                - task: Kubernetes@1
-                  displayName: Deploy to uat namespace in kubernetes
+                - task: AzureCLI@2
+                  displayName: Create/update mysql & rabbitmq k8s Secrets
                   inputs:
-                    kubernetesServiceEndpoint: $(uatAksServiceConnectionName)
-                    kubernetesCluster: $(aksClusterName)
+                    azureSubscription: $(azureRMServiceConnection) # must be an AzureRM SP connection
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      # 1) Authenticate kubectl against your AKS cluster
+                      az aks get-credentials \
+                        --resource-group ecommerce-resource-group \
+                        --name $(aksClusterName) \
+                        --overwrite-existing
+
+                      # 2) Create-or-update the mysql-credentials Secret
+                      kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
+                        --from-literal=DbName=$(DbName) \
+                        --from-literal=DbAdminUser=$(DbAdminUser) \
+                        --from-literal=DbAdminPassword=$(DbAdminPassword) \
+                        --from-literal=ConnectionStrings__DefaultConnection="$(DefaultConnection)" \
+                        --from-literal=connectionString="$(DefaultConnection)" \
+                        --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
+
+                      # 3) Create-or-update the rabbitmq-credentials Secret
+                      kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
+                        --from-literal=RabbitMqUsername=$(RabbitMqUsername) \
+                        --from-literal=RabbitMqPassword=$(RabbitMqPassword) \
+                        --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
+
+                # ─── 2) Patch your image tags ─────────────────────────────
+                - script: |
+                    find $(Build.SourcesDirectory)/k8s/uat \
+                      -type f \( -name "*.yaml" -o -name "*.yml" \) \
+                      -exec sed -i 's/__TAG__/$(tag)/g' {} +
+                  displayName: Replace __TAG__ in Manifests
+
+                # ─── 3) Apply all the dev manifests ──────────────────────
+                - task: Kubernetes@1
+                  displayName: Apply k8s/uat Manifests
+                  inputs:
+                    kubernetesServiceEndpoint: $(uat-aks-service-connection)
                     namespace: $(kubernetes-namespace)
                     command: apply
-                    arguments: "-f $(Build.SourcesDirectory)/k8s/uat/."
+                    arguments: -f $(Build.SourcesDirectory)/k8s/uat
 
   - stage: DeployToStaging
     displayName: Deploy to Staging
     dependsOn: Test
-    condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/staging'))
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/staging'))
     variables:
-    - group: products-microservice-staging
+      - group: products-microservice-staging
+      - group: products-secrets-staging
+
     jobs:
       - deployment: DeploymentToStaging
-        displayName: Deployment to Staging Environment
+        displayName: Deploy to Staging Environment
         environment: staging
         strategy:
           runOnce:
             deploy:
               steps:
                 - checkout: self
-                  displayName: Checkout source code
 
-                - script: |
-                    echo "Listing contents of k8s"
-                    ls -l $(Build.SourcesDirectory)/k8s/staging
-                  displayName: "List Files in k8s Staging Directory"
-
-                - script: |
-                    find $(Build.SourcesDirectory)/k8s/staging -type f \( -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/__TAG__/$(tag)/g' {} +
-                  displayName: "Replace image tag in staging deployment file"
-
-                - task: Kubernetes@1
-                  displayName: Deploy to staging namespace in kubernetes
+                - task: AzureCLI@2
+                  displayName: Create/update mysql & rabbitmq k8s Secrets
                   inputs:
-                    kubernetesServiceEndpoint: $(stagingAksServiceConnectionName)
-                    kubernetesCluster: $(aksClusterName)
+                    azureSubscription: $(azureRMServiceConnection) # must be an AzureRM SP connection
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      # 1) Authenticate kubectl against your AKS cluster
+                      az aks get-credentials \
+                        --resource-group ecommerce-resource-group \
+                        --name $(aksClusterName) \
+                        --overwrite-existing
+
+                      # 2) Create-or-update the mysql-credentials Secret
+                      kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
+                        --from-literal=DbName=$(DbName) \
+                        --from-literal=DbAdminUser=$(DbAdminUser) \
+                        --from-literal=DbAdminPassword=$(DbAdminPassword) \
+                        --from-literal=ConnectionStrings__DefaultConnection="$(DefaultConnection)" \
+                        --from-literal=connectionString="$(DefaultConnection)" \
+                        --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
+
+                      # 3) Create-or-update the rabbitmq-credentials Secret
+                      kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
+                        --from-literal=RabbitMqUsername=$(RabbitMqUsername) \
+                        --from-literal=RabbitMqPassword=$(RabbitMqPassword) \
+                        --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
+
+                # ─── 2) Patch your image tags ─────────────────────────────
+                - script: |
+                    find $(Build.SourcesDirectory)/k8s/staging \
+                      -type f \( -name "*.yaml" -o -name "*.yml" \) \
+                      -exec sed -i 's/__TAG__/$(tag)/g' {} +
+                  displayName: Replace __TAG__ in Manifests
+
+                # ─── 3) Apply all the dev manifests ──────────────────────
+                - task: Kubernetes@1
+                  displayName: Apply k8s/staging Manifests
+                  inputs:
+                    kubernetesServiceEndpoint: $(staging-aks-service-connection)
                     namespace: $(kubernetes-namespace)
                     command: apply
-                    arguments: "-f $(Build.SourcesDirectory)/k8s/staging/."
+                    arguments: -f $(Build.SourcesDirectory)/k8s/staging
 
-  - stage: DeployToProd
+  - stage: DeployToProduction
     displayName: Deploy to Production
     dependsOn: Test
-    condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/prod'))
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/prod'))
     variables:
-    - group: products-microservice-prod
+      - group: products-microservice-prod
+      - group: products-secrets-prod
+
     jobs:
       - deployment: DeploymentToProduction
-        displayName: Deployment to Production Environment
+        displayName: Deploy to Production Environment
         environment: prod
         strategy:
           runOnce:
             deploy:
               steps:
                 - checkout: self
-                  displayName: Checkout source code
 
-                - script: |
-                    echo "Listing contents of k8s"
-                    ls -l $(Build.SourcesDirectory)/k8s/prod
-                  displayName: "List Files in k8s Directory"
-
-                - script: |
-                    find $(Build.SourcesDirectory)/k8s/prod -type f \( -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/__TAG__/$(tag)/g' {} +
-                  displayName: "Replace image tag in prod deployment file"
-
-                - task: Kubernetes@1
-                  displayName: Deploy to production namespace in kubernetes
+                - task: AzureCLI@2
+                  displayName: Create/update mysql & rabbitmq k8s Secrets
                   inputs:
-                    kubernetesServiceEndpoint: $(prodAksServiceConnectionName)
-                    kubernetesCluster: $(aksClusterName)
+                    azureSubscription: $(azureRMServiceConnection) # must be an AzureRM SP connection
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      # 1) Authenticate kubectl against your AKS cluster
+                      az aks get-credentials \
+                        --resource-group ecommerce-resource-group \
+                        --name $(aksClusterName) \
+                        --overwrite-existing
+
+                      # 2) Create-or-update the mysql-credentials Secret
+                      kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
+                        --from-literal=DbName=$(DbName) \
+                        --from-literal=DbAdminUser=$(DbAdminUser) \
+                        --from-literal=DbAdminPassword=$(DbAdminPassword) \
+                        --from-literal=ConnectionStrings__DefaultConnection="$(DefaultConnection)" \
+                        --from-literal=connectionString="$(DefaultConnection)" \
+                        --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
+
+                      # 3) Create-or-update the rabbitmq-credentials Secret
+                      kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
+                        --from-literal=RabbitMqUsername=$(RabbitMqUsername) \
+                        --from-literal=RabbitMqPassword=$(RabbitMqPassword) \
+                        --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
+
+                # ─── 2) Patch your image tags ─────────────────────────────
+                - script: |
+                    find $(Build.SourcesDirectory)/k8s/prod \
+                      -type f \( -name "*.yaml" -o -name "*.yml" \) \
+                      -exec sed -i 's/__TAG__/$(tag)/g' {} +
+                  displayName: Replace __TAG__ in Manifests
+
+                # ─── 3) Apply all the dev manifests ──────────────────────
+                - task: Kubernetes@1
+                  displayName: Apply k8s/production Manifests
+                  inputs:
+                    kubernetesServiceEndpoint: $(prod-aks-service-connection)
                     namespace: $(kubernetes-namespace)
                     command: apply
-                    arguments: "-f $(Build.SourcesDirectory)/k8s/prod/."
+                    arguments: -f $(Build.SourcesDirectory)/k8s/prod
