@@ -18,12 +18,42 @@ public static class DependencyInjection
         // e.g., services.AddDbContext<YourDbContext>();
         string connectionStringTemplate = configuration.GetConnectionString("DefaultConnection")!;
 
+        if (string.IsNullOrEmpty(connectionStringTemplate))
+        {
+            throw new InvalidOperationException("No DefaultConnection found in appsettings!");
+        }
+
+        var mysqlHost = Environment.GetEnvironmentVariable("MYSQL_HOST");
+        if (string.IsNullOrEmpty(mysqlHost))
+        {
+            throw new InvalidOperationException("MYSQL_HOST env variable is missing!");
+        }
+
+        var mysqlDb = Environment.GetEnvironmentVariable("MYSQL_DB");
+        if (string.IsNullOrEmpty(mysqlDb))
+        {
+            throw new InvalidOperationException("MYSQL_DB env variable is missing!");
+        }
+
+        var mysqlUser = Environment.GetEnvironmentVariable("MYSQL_USER");
+        if (string.IsNullOrEmpty(mysqlUser))
+        {
+            throw new InvalidOperationException("MYSQL_USER env variable is missing!");
+        }
+
+        var mysqlPort = Environment.GetEnvironmentVariable("MYSQL_PORT");
+        if (string.IsNullOrEmpty(mysqlPort))
+        {
+            throw new InvalidOperationException("MYSQL_PORT env variable is missing!");
+        }
         string connectionString = connectionStringTemplate
             .Replace("$MYSQL_HOST", Environment.GetEnvironmentVariable("MYSQL_HOST")!)
             .Replace("$MYSQL_DB", Environment.GetEnvironmentVariable("MYSQL_DB")!)
             .Replace("$MYSQL_USER", Environment.GetEnvironmentVariable("MYSQL_USER")!)
             .Replace("$MYSQL_PORT", Environment.GetEnvironmentVariable("MYSQL_PORT")!)
             .Replace("$MYSQL_PASSWORD", Environment.GetEnvironmentVariable("MYSQL_PASSWORD")!);
+
+        Console.WriteLine($"Connection string: {connectionString}");
 
         services.AddDbContext<ApplicationDbContext>(options =>
         {
