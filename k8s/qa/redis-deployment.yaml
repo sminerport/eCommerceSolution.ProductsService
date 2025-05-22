@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis-deployment
-  namespace: dev
+  namespace: qa
   labels:
     app: redis
 spec:

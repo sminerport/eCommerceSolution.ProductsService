@@ -2,7 +2,7 @@
 kind: Deployment
 metadata:
   name: products-microservice-deployment
-  namespace: dev
+  namespace: staging
   labels:
     app: products-microservice
 spec:
