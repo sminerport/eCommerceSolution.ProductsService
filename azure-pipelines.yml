@@ -215,7 +215,7 @@ stages:
                       -exec sed -i 's/__TAG__/$(tag)/g' {} +
                   displayName: Replace __TAG__ in Manifests
 
-                # ─── 3) Apply all the dev manifests ──────────────────────
+                # ─── 3) Apply all the qa manifests ──────────────────────
                 - task: Kubernetes@1
                   displayName: Apply k8s/qa Manifests
                   inputs:
