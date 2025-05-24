@@ -53,8 +53,6 @@ public static class DependencyInjection
             .Replace("$MYSQL_PORT", Environment.GetEnvironmentVariable("MYSQL_PORT")!)
             .Replace("$MYSQL_PASSWORD", Environment.GetEnvironmentVariable("MYSQL_PASSWORD")!);
 
-        Console.WriteLine($"Connection string: {connectionString}");
-
         services.AddDbContext<ApplicationDbContext>(options =>
         {
             options.UseMySQL(connectionString);
