@@ -13,7 +13,7 @@ public static class ProductAPIEndpoints
         //GET /api/products
         app.MapGet("/api/products", async (IProductsService productsService) =>
         {
-            var products = await productsService.GetProducts();
+            List<ProductResponse?> products = await productsService.GetProducts();
 
             return Results.Ok(products);
         });
@@ -48,7 +48,7 @@ public static class ProductAPIEndpoints
             && temp.Category.Contains(
                 SearchString));
 
-            var products = productsByProductName.Union(productsByCategory);
+            IEnumerable<ProductResponse?> products = productsByProductName.Union(productsByCategory);
 
             return Results.Ok(products);
         });

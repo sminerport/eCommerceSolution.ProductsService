@@ -14,49 +14,24 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Add your infrastructure services here
-        // e.g., services.AddDbContext<YourDbContext>();
-        string connectionStringTemplate = configuration.GetConnectionString("DefaultConnection")!;
+        string connTemplate = configuration.GetConnectionString("DefaultConnection")!;
+        if (string.IsNullOrWhiteSpace(connTemplate))
+            throw new InvalidOperationException("No DefaultConnection in config");
 
-        if (string.IsNullOrEmpty(connectionStringTemplate))
+        // pull every value from IConfiguration (which includes User Secrets)
+        Dictionary<string, string> replacements = new Dictionary<string, string>
         {
-            throw new InvalidOperationException("No DefaultConnection found in appsettings!");
-        }
+            ["$MYSQL_HOST"] = configuration["MYSQL_HOST"]!,
+            ["$MYSQL_DB"] = configuration["MYSQL_DB"]!,
+            ["$MYSQL_USER"] = configuration["MYSQL_USER"]!,
+            ["$MYSQL_PASSWORD"] = configuration["MYSQL_PASSWORD"]!,
+            ["$MYSQL_PORT"] = configuration["MYSQL_PORT"]!
+        };
+        foreach (KeyValuePair<string, string> kv in replacements)
+            connTemplate = connTemplate.Replace(kv.Key, kv.Value);
 
-        var mysqlHost = Environment.GetEnvironmentVariable("MYSQL_HOST");
-        if (string.IsNullOrEmpty(mysqlHost))
-        {
-            throw new InvalidOperationException("MYSQL_HOST env variable is missing!");
-        }
-
-        var mysqlDb = Environment.GetEnvironmentVariable("MYSQL_DB");
-        if (string.IsNullOrEmpty(mysqlDb))
-        {
-            throw new InvalidOperationException("MYSQL_DB env variable is missing!");
-        }
-
-        var mysqlUser = Environment.GetEnvironmentVariable("MYSQL_USER");
-        if (string.IsNullOrEmpty(mysqlUser))
-        {
-            throw new InvalidOperationException("MYSQL_USER env variable is missing!");
-        }
-
-        var mysqlPort = Environment.GetEnvironmentVariable("MYSQL_PORT");
-        if (string.IsNullOrEmpty(mysqlPort))
-        {
-            throw new InvalidOperationException("MYSQL_PORT env variable is missing!");
-        }
-        string connectionString = connectionStringTemplate
-            .Replace("$MYSQL_HOST", Environment.GetEnvironmentVariable("MYSQL_HOST")!)
-            .Replace("$MYSQL_DB", Environment.GetEnvironmentVariable("MYSQL_DB")!)
-            .Replace("$MYSQL_USER", Environment.GetEnvironmentVariable("MYSQL_USER")!)
-            .Replace("$MYSQL_PORT", Environment.GetEnvironmentVariable("MYSQL_PORT")!)
-            .Replace("$MYSQL_PASSWORD", Environment.GetEnvironmentVariable("MYSQL_PASSWORD")!);
-
-        services.AddDbContext<ApplicationDbContext>(options =>
-        {
-            options.UseMySQL(connectionString);
-        });
+        services.AddDbContext<ApplicationDbContext>(opt =>
+            opt.UseMySQL(connTemplate));
         // Register your repositories
         // e.g., services.AddScoped<IYourRepository, YourRepository>();
         services.AddScoped<IProductsRepository, ProductsRepository>();

@@ -50,9 +50,9 @@ public class ProductsServiceTests
     public async Task AddProduct_ShouldAddValidProduct()
     {
         // Arrange
-        var productAddRequest = _fixture.Create<ProductAddRequest>();
-        var product = _fixture.Create<Product>();
-        var productResponse = _fixture.Create<ProductResponse>();
+        ProductAddRequest productAddRequest = _fixture.Create<ProductAddRequest>();
+        Product product = _fixture.Create<Product>();
+        ProductResponse productResponse = _fixture.Create<ProductResponse>();
 
         _productAddRequestValidatorMock
             .Setup(validator => validator.ValidateAsync(It.IsAny<ProductAddRequest>(),
@@ -65,7 +65,7 @@ public class ProductsServiceTests
         _mapperMock.Setup(m => m.Map<ProductResponse>(It.IsAny<Product>())).Returns(productResponse);
 
         // Act
-        var result = await _productsService.AddProduct(productAddRequest);
+        ProductResponse? result = await _productsService.AddProduct(productAddRequest);
 
         // Assert
         result.Should().NotBeNull();
@@ -78,8 +78,8 @@ public class ProductsServiceTests
     public async Task AddProduct_ShouldThrowArgumentExceptionWhenInvalidProduct()
     {
         // Arrange
-        var productAddRequest = _fixture.Create<ProductAddRequest>();
-        var validationResult = new ValidationResult(new[] { new ValidationFailure("Property", "Error") });
+        ProductAddRequest productAddRequest = _fixture.Create<ProductAddRequest>();
+        ValidationResult validationResult = new ValidationResult(new[] { new ValidationFailure("Property", "Error") });
 
         _productAddRequestValidatorMock
             .Setup(validator => validator.ValidateAsync(It.IsAny<ProductAddRequest>(), It.IsAny<CancellationToken>()))
@@ -108,15 +108,15 @@ public class ProductsServiceTests
     public async Task GetProducts_ShouldReturnAllProducts()
     {
         // Arrange
-        var products = _fixture.CreateMany<Product>(3);
-        var productResponses = _fixture.CreateMany<ProductResponse>(3);
+        IEnumerable<Product> products = _fixture.CreateMany<Product>(3);
+        IEnumerable<ProductResponse> productResponses = _fixture.CreateMany<ProductResponse>(3);
 
         _productsRepositoryMock.Setup(repo => repo.GetProducts()).ReturnsAsync(products);
         _mapperMock.Setup(m => m.Map<IEnumerable<ProductResponse>>(It.IsAny<IEnumerable<Product>>()))
             .Returns(productResponses);
 
         // Act
-        var result = await _productsService.GetProducts();
+        List<ProductResponse?> result = await _productsService.GetProducts();
 
         // Assert
         result.Should().NotBeNull();
@@ -127,8 +127,8 @@ public class ProductsServiceTests
     public async Task GetProductByCondition_ShouldReturnProductWhenConditionMatches()
     {
         // Arrange
-        var product = _fixture.Create<Product>();
-        var productResponse = _fixture.Create<ProductResponse>();
+        Product product = _fixture.Create<Product>();
+        ProductResponse productResponse = _fixture.Create<ProductResponse>();
 
         _productsRepositoryMock.Setup(repo => repo.GetProductByCondition(It.IsAny<Expression<Func<Product, bool>>>()))
             .ReturnsAsync(product);
@@ -136,7 +136,7 @@ public class ProductsServiceTests
         _mapperMock.Setup(m => m.Map<ProductResponse>(product)).Returns(productResponse);
 
         // Act
-        var result = await _productsService.GetProductByCondition(p => p.ProductID == product.ProductID);
+        ProductResponse? result = await _productsService.GetProductByCondition(p => p.ProductID == product.ProductID);
 
         // Assert
         result.Should().NotBeNull();
@@ -147,10 +147,10 @@ public class ProductsServiceTests
     public async Task UpdateProduct_ShouldUpdateExistingProduct()
     {
         // Arrange
-        var productUpdateRequest = _fixture.Create<ProductUpdateRequest>();
-        var existingProduct = _fixture.Create<Product>();
-        var updatedProduct = _fixture.Create<Product>();
-        var updatedProductResponse = _fixture.Create<ProductResponse>();
+        ProductUpdateRequest productUpdateRequest = _fixture.Create<ProductUpdateRequest>();
+        Product existingProduct = _fixture.Create<Product>();
+        Product updatedProduct = _fixture.Create<Product>();
+        ProductResponse updatedProductResponse = _fixture.Create<ProductResponse>();
 
         _productsRepositoryMock.Setup(repo => repo.GetProductByCondition(It.IsAny<Expression<Func<Product, bool>>>()))
             .ReturnsAsync(existingProduct);
@@ -163,7 +163,7 @@ public class ProductsServiceTests
         _mapperMock.Setup(m => m.Map<ProductResponse>(updatedProduct)).Returns(updatedProductResponse);
 
         // Act
-        var result = await _productsService.UpdateProduct(productUpdateRequest);
+        ProductResponse? result = await _productsService.UpdateProduct(productUpdateRequest);
 
         // Assert
         result.Should().NotBeNull();
@@ -175,15 +175,15 @@ public class ProductsServiceTests
     public async Task DeleteProduct_ShouldReturnTrueWhenProductIsDeleted()
     {
         // Arrange
-        var productID = _fixture.Create<Guid>();
-        var existingProduct = _fixture.Create<Product>();
+        Guid productID = _fixture.Create<Guid>();
+        Product existingProduct = _fixture.Create<Product>();
 
         _productsRepositoryMock.Setup(repo => repo.GetProductByCondition(It.IsAny<Expression<Func<Product, bool>>>()))
             .ReturnsAsync(existingProduct);
         _productsRepositoryMock.Setup(repo => repo.DeleteProduct(productID)).ReturnsAsync(true);
 
         // Act
-        var result = await _productsService.DeleteProduct(productID);
+        bool result = await _productsService.DeleteProduct(productID);
 
         // Assert
         result.Should().BeTrue();
@@ -193,14 +193,14 @@ public class ProductsServiceTests
     public async Task AddProduct_ShouldThrowArgumentExceptionWhenValidationFails()
     {
         // Arrange
-        var productAddRequest = _fixture.Create<ProductAddRequest>();
-        var validationFailures = new List<ValidationFailure>
+        ProductAddRequest productAddRequest = _fixture.Create<ProductAddRequest>();
+        List<ValidationFailure> validationFailures = new List<ValidationFailure>
         {
             new ValidationFailure("ProductName", "Product name is required"),
             new ValidationFailure("UnitPrice", "Unit price must be greater than zero")
         };
 
-        var validationResult = new ValidationResult(validationFailures);
+        ValidationResult validationResult = new ValidationResult(validationFailures);
 
         _productAddRequestValidatorMock
             .Setup(validator => validator.ValidateAsync(It.IsAny<ProductAddRequest>(), It.IsAny<CancellationToken>()))
@@ -223,7 +223,7 @@ public class ProductsServiceTests
             .ReturnsAsync((Product)null);
 
         // Act
-        var result = await _productsService.GetProductByCondition(p => p.ProductID == Guid.NewGuid());
+        ProductResponse? result = await _productsService.GetProductByCondition(p => p.ProductID == Guid.NewGuid());
 
         // Assert
         result.Should().BeNull();
@@ -233,7 +233,7 @@ public class ProductsServiceTests
     public async Task UpdateProduct_ShouldThrowArgumentExceptionWhenProductDoesNotExist()
     {
         // Arrange
-        var productUpdateRequest = _fixture.Create<ProductUpdateRequest>();
+        ProductUpdateRequest productUpdateRequest = _fixture.Create<ProductUpdateRequest>();
 
         _productsRepositoryMock.Setup(repo => repo.GetProductByCondition(It.IsAny<Expression<Func<Product, bool>>>()))
             .ReturnsAsync((Product)null);
@@ -242,8 +242,9 @@ public class ProductsServiceTests
         Func<Task> act = async () => await _productsService.UpdateProduct(productUpdateRequest);
 
         // Assert
+        string expectedMessage = $"Product with ID {productUpdateRequest.ProductID} not found.";
         await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("Value cannot be null. (Parameter 'productUpdateRequest')");
+            .WithMessage(expectedMessage);
         _productsRepositoryMock.Verify(repo => repo.UpdateProduct(It.IsAny<Product>()), Times.Never);
     }
 
@@ -251,14 +252,14 @@ public class ProductsServiceTests
     public async Task UpdateProduct_ShouldThrowArgumentExceptionWhenValidationFails()
     {
         // Arrange
-        var productUpdateRequest = _fixture.Create<ProductUpdateRequest>();
-        var existingProduct = _fixture.Create<Product>();
-        var validationFailures = new List<ValidationFailure>
+        ProductUpdateRequest productUpdateRequest = _fixture.Create<ProductUpdateRequest>();
+        Product existingProduct = _fixture.Create<Product>();
+        List<ValidationFailure> validationFailures = new List<ValidationFailure>
         {
             new ValidationFailure("ProductName", "Product name is required"),
             new ValidationFailure("UnitPrice", "Unit price must be greater than zero")
         };
-        var validationResult = new ValidationResult(validationFailures);
+        ValidationResult validationResult = new ValidationResult(validationFailures);
 
         _productsRepositoryMock.Setup(repo => repo.GetProductByCondition(It.IsAny<Expression<Func<Product, bool>>>()))
             .ReturnsAsync(existingProduct);
@@ -279,13 +280,13 @@ public class ProductsServiceTests
     public async Task DeleteProduct_ShouldReturnFalseWhenProductDoesNotExist()
     {
         // Arrange
-        var productID = _fixture.Create<Guid>();
+        Guid productID = _fixture.Create<Guid>();
 
         _productsRepositoryMock.Setup(repo => repo.GetProductByCondition(It.IsAny<Expression<Func<Product, bool>>>()))
             .ReturnsAsync((Product)null);
 
         // Act
-        var result = await _productsService.DeleteProduct(productID);
+        bool result = await _productsService.DeleteProduct(productID);
 
         // Assert
         result.Should().BeFalse();
