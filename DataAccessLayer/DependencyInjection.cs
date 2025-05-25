@@ -19,7 +19,7 @@ public static class DependencyInjection
             throw new InvalidOperationException("No DefaultConnection in config");
 
         // pull every value from IConfiguration (which includes User Secrets)
-        var replacements = new Dictionary<string, string>
+        Dictionary<string, string> replacements = new Dictionary<string, string>
         {
             ["$MYSQL_HOST"] = configuration["MYSQL_HOST"]!,
             ["$MYSQL_DB"] = configuration["MYSQL_DB"]!,
@@ -27,7 +27,7 @@ public static class DependencyInjection
             ["$MYSQL_PASSWORD"] = configuration["MYSQL_PASSWORD"]!,
             ["$MYSQL_PORT"] = configuration["MYSQL_PORT"]!
         };
-        foreach (var kv in replacements)
+        foreach (KeyValuePair<string, string> kv in replacements)
             connTemplate = connTemplate.Replace(kv.Key, kv.Value);
 
         services.AddDbContext<ApplicationDbContext>(opt =>

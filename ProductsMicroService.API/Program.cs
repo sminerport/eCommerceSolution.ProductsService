@@ -4,9 +4,8 @@ using eCommerce.ProductServices.DataAccessLayer;
 using eCommerce.ProductServices.BusinessLogicLayer;
 using eCommerce.ProductsMicroService.API.APIEndpoints;
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.Logging;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddLogging(lb => { lb.AddConsole(); lb.AddDebug(); });
 
@@ -37,7 +36,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 app.UseExceptionHandlingMiddleware();
 
