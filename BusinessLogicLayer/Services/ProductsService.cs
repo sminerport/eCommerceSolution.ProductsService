@@ -70,7 +70,7 @@ public class ProductsService : IProductsService
 
         if (existingProduct == null)
         {
-            throw new ArgumentNullException(nameof(productUpdateRequest));
+            throw new ArgumentException($"Product with ID {productUpdateRequest.ProductID} not found.");
         }
 
         ValidationResult validationResult = await _productUpdateRequestValidator.ValidateAsync(productUpdateRequest);

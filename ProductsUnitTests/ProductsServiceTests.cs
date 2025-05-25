@@ -242,8 +242,9 @@ public class ProductsServiceTests
         Func<Task> act = async () => await _productsService.UpdateProduct(productUpdateRequest);
 
         // Assert
+        string expectedMessage = $"Product with ID {productUpdateRequest.ProductID} not found.";
         await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("Value cannot be null. (Parameter 'productUpdateRequest')");
+            .WithMessage(expectedMessage);
         _productsRepositoryMock.Verify(repo => repo.UpdateProduct(It.IsAny<Product>()), Times.Never);
     }
 
