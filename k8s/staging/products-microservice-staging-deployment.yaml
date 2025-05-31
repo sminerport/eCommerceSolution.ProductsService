@@ -32,7 +32,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: mysql-credentials
-                  key: ConnectionStrings__DefaultConnection
+                  key: connectionString
 
             # ───────────────────────────────────────────────────────────
             # RabbitMQ credentials also from a Secret
