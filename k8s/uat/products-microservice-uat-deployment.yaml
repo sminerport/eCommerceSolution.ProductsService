@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: products-microservice
-          image: microecommerceregistry.azurecr.io/products-microservice:__TAG__
+          image: scottazurecontainerregistry.azurecr.io/products-microservice:__TAG__
           imagePullPolicy: Always
           ports:
             - containerPort: 7070
