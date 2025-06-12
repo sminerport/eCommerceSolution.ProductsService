@@ -25,6 +25,9 @@ spec:
             - name: ASPNETCORE_ENVIRONMENT
               value: Development
 
+            - name: ASPNETCORE_URLS
+              value: http://+:7070
+
             # ───────────────────────────────────────────────────────────
             # Database connection comes entirely from a Secret
             # ───────────────────────────────────────────────────────────
