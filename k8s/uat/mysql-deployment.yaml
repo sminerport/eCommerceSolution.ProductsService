@@ -18,9 +18,6 @@ spec:
       containers:
         - name: mysql
           image: scottazurecontainerregistry.azurecr.io/ecommerce-mysql:latest
-          env:
-            - name: ConnectionStrings__DefaultConnection
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-credentials
-                  key: connectionString
+          envFrom:
+            - secretRef:
+                name: mysql-credentials
