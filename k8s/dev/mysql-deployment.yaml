@@ -18,6 +18,29 @@ spec:
       containers:
         - name: mysql
           image: scottazurecontainerregistry.azurecr.io/ecommerce-mysql:latest
-          envFrom:
-            - secretRef:
-                name: mysql-credentials
+          # Provide only the necessary initialization variables
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credentials
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credentials
+                  key: MYSQL_DATABASE
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credentials
+                  key: MYSQL_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-credentials
+                  key: MYSQL_PASSWORD
+          # Expose MySQL port
+          ports:
+            - containerPort: 3306
+

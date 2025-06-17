@@ -131,7 +131,7 @@ stages:
                       kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
                         --from-literal=connectionString="$(DefaultConnection)" \
                         --from-literal=MYSQL_ROOT_PASSWORD="$(MySqlRootPassword)" \
-                        --from-literal=MYSQL_DATABASE="$(mySqlDatabase)" \
+                        --from-literal=MYSQL_DATABASE="$(MySqlDatabase)" \
                         --from-literal=MYSQL_USER="$(MySqlUser)" \
                         --from-literal=MYSQL_PASSWORD="$(MySqlPassword)" \
                         --dry-run=client -o yaml \
@@ -194,7 +194,7 @@ stages:
                       kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
                         --from-literal=connectionString="$(DefaultConnection)" \
                         --from-literal=MYSQL_ROOT_PASSWORD="$(MySqlRootPassword)" \
-                        --from-literal=MYSQL_DATABASE="$(mySqlDatabase)" \
+                        --from-literal=MYSQL_DATABASE="$(MySqlDatabase)" \
                         --from-literal=MYSQL_USER="$(MySqlUser)" \
                         --from-literal=MYSQL_PASSWORD="$(MySqlPassword)" \
                         --dry-run=client -o yaml \
@@ -257,7 +257,7 @@ stages:
                       kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
                         --from-literal=connectionString="$(DefaultConnection)" \
                         --from-literal=MYSQL_ROOT_PASSWORD="$(MySqlRootPassword)" \
-                        --from-literal=MYSQL_DATABASE="$(mySqlDatabase)" \
+                        --from-literal=MYSQL_DATABASE="$(MySqlDatabase)" \
                         --from-literal=MYSQL_USER="$(MySqlUser)" \
                         --from-literal=MYSQL_PASSWORD="$(MySqlPassword)" \
                         --dry-run=client -o yaml \
@@ -320,7 +320,7 @@ stages:
                       kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
                         --from-literal=connectionString="$(DefaultConnection)" \
                         --from-literal=MYSQL_ROOT_PASSWORD="$(MySqlRootPassword)" \
-                        --from-literal=MYSQL_DATABASE="$(mySqlDatabase)" \
+                        --from-literal=MYSQL_DATABASE="$(MySqlDatabase)" \
                         --from-literal=MYSQL_USER="$(MySqlUser)" \
                         --from-literal=MYSQL_PASSWORD="$(MySqlPassword)" \
                         --dry-run=client -o yaml \
@@ -383,7 +383,7 @@ stages:
                       kubectl -n $(kubernetes-namespace) create secret generic mysql-credentials \
                         --from-literal=connectionString="$(DefaultConnection)" \
                         --from-literal=MYSQL_ROOT_PASSWORD="$(MySqlRootPassword)" \
-                        --from-literal=MYSQL_DATABASE="$(mySqlDatabase)" \
+                        --from-literal=MYSQL_DATABASE="$(MySqlDatabase)" \
                         --from-literal=MYSQL_USER="$(MySqlUser)" \
                         --from-literal=MYSQL_PASSWORD="$(MySqlPassword)" \
                         --dry-run=client -o yaml \
