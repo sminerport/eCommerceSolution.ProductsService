@@ -135,6 +135,7 @@ stages:
                         --from-literal=MYSQL_USER="$(MySqlUser)" \
                         --from-literal=MYSQL_PASSWORD="$(MySqlPassword)" \
                         --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
 
                       # 3) Create-or-update the rabbitmq-credentials Secret
                       kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
@@ -198,6 +199,7 @@ stages:
                         --from-literal=MYSQL_USER="$(MySqlUser)" \
                         --from-literal=MYSQL_PASSWORD="$(MySqlPassword)" \
                         --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
 
                       # 3) Create-or-update the rabbitmq-credentials Secret
                       kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
@@ -261,6 +263,7 @@ stages:
                         --from-literal=MYSQL_USER="$(MySqlUser)" \
                         --from-literal=MYSQL_PASSWORD="$(MySqlPassword)" \
                         --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
 
                       # 3) Create-or-update the rabbitmq-credentials Secret
                       kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
@@ -324,6 +327,7 @@ stages:
                         --from-literal=MYSQL_USER="$(MySqlUser)" \
                         --from-literal=MYSQL_PASSWORD="$(MySqlPassword)" \
                         --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
 
                       # 3) Create-or-update the rabbitmq-credentials Secret
                       kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
@@ -387,6 +391,7 @@ stages:
                         --from-literal=MYSQL_USER="$(MySqlUser)" \
                         --from-literal=MYSQL_PASSWORD="$(MySqlPassword)" \
                         --dry-run=client -o yaml \
+                      | kubectl -n $(kubernetes-namespace) apply -f -
 
                       # 3) Create-or-update the rabbitmq-credentials Secret
                       kubectl -n $(kubernetes-namespace) create secret generic rabbitmq-credentials \
