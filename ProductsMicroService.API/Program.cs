@@ -38,7 +38,10 @@ builder.Services.AddCors(options =>
 
 WebApplication app = builder.Build();
 
-app.UseExceptionHandlingMiddleware();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandlingMiddleware();
+}
 
 // Routing
 app.UseRouting();
